@@ -1,6 +1,7 @@
 package com.example.scpmisystem
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +14,7 @@ fun AppNavigation(navController: NavHostController) {
     ) {
         composable("login") {
             LoginScreen(
-                onLoginClick = { username, password ->
+                onLoginClick = { _, _ ->
                     // Handle login logic here
                     // For now, just navigate to home
                     navController.navigate("home") {
@@ -28,7 +29,7 @@ fun AppNavigation(navController: NavHostController) {
 
         composable("register") {
             RegisterScreen(
-                onRegisterClick = { username, password ->
+                onRegisterClick = { _, _ ->
                     // Handle registration logic here
                     // User will be navigated back to login in RegisterScreen
                 },
@@ -39,8 +40,7 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable("home") {
-            HomeScreen(modifier = androidx.compose.ui.Modifier)
+            HomeScreen(modifier = Modifier)
         }
     }
 }
-
