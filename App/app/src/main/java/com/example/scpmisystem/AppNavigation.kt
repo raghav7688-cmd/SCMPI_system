@@ -14,9 +14,7 @@ fun AppNavigation(navController: NavHostController) {
     ) {
         composable("login") {
             LoginScreen(
-                onLoginClick = { _, _ ->
-                    // Handle login logic here
-                    // For now, just navigate to home
+                onLoginSuccess = {
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -29,9 +27,10 @@ fun AppNavigation(navController: NavHostController) {
 
         composable("register") {
             RegisterScreen(
-                onRegisterClick = { _, _ ->
-                    // Handle registration logic here
-                    // User will be navigated back to login in RegisterScreen
+                onRegisterSuccess = {
+                    navController.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
                 },
                 onNavigateBack = {
                     navController.popBackStack()

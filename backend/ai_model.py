@@ -15,12 +15,27 @@ MODEL_PATH = Path(__file__).parent / "model.joblib"
 
 
 def build_pipeline(df: pd.DataFrame) -> Pipeline:
-    features = ["State_Name", "Season", "Crop", "Area", "Crop_Year"]
+    # adapt to available columns in dataset and normalize names for pipeline consistency
+    df = df.copy()
+    if "Suggested_Crop" in df.columns and "Crop" not in df.columns:
+        df = df.rename(columns={"Suggested_Crop": "Crop"})
+
+    if "Max_Production" in df.columns and "Production" not in df.columns:
+        df = df.rename(columns={"Max_Production": "Production"})
+
+    if "Crop" not in df.columns:
+        raise ValueError("Missing crop column in dataset. Expected 'Crop' or 'Suggested_Crop'.")
+
+    area_col = "Area" if "Area" in df.columns else None
+
+    features = ["State_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
     X = df[features]
     y = df["Production"]
+    if y is None:
+        raise ValueError("Missing target column in dataset. Expected 'Production' or 'Max_Production'.")
 
     categorical = ["State_Name", "Season", "Crop"]
-    numeric = ["Area", "Crop_Year"]
+    numeric = ["Crop_Year"] + ([area_col] if area_col else [])
 
     preprocessor = ColumnTransformer(
         [
@@ -38,10 +53,20 @@ def build_pipeline(df: pd.DataFrame) -> Pipeline:
 
 
 def train_and_save() -> dict:
-    df = load_crop_data()
+    df = load_crop_data().copy()
+    if "Suggested_Crop" in df.columns and "Crop" not in df.columns:
+        df = df.rename(columns={"Suggested_Crop": "Crop"})
+    if "Max_Production" in df.columns and "Production" not in df.columns:
+        df = df.rename(columns={"Max_Production": "Production"})
+
     pipe = build_pipeline(df)
-    X = df[["State_Name", "Season", "Crop", "Area", "Crop_Year"]]
+
+    area_col = "Area" if "Area" in df.columns else None
+    feature_cols = ["State_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
+
+    X = df[feature_cols]
     y = df["Production"]
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     pipe.fit(X_train, y_train)
     preds = pipe.predict(X_test)

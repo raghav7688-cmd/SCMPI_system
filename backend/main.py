@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import hashlib
+from pathlib import Path
 
 from .database import init_db, get_connection
 from .crop_recommendation import recommend_crop
@@ -18,6 +20,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for favicon
+static_dir = Path(__file__).parent / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 class AuthRequest(BaseModel):
@@ -67,6 +74,12 @@ def root():
         "status": "ok",
         "message": "Backend is running. See /docs for interactive API docs.",
     }
+
+
+@app.get("/favicon.ico")
+def favicon():
+    """Return a minimal favicon to suppress 404 errors"""
+    return {"status": "ok"}
 
 
 @app.post("/register")

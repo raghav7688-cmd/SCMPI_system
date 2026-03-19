@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
 fun LoginScreenPreview() {
     SCPMISystemTheme {
         LoginScreen(
-            onLoginClick = { _, _ -> },
+            onLoginSuccess = {},
             onNavigateToRegister = {}
         )
     }

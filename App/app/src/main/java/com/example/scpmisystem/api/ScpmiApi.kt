@@ -1,13 +1,15 @@
 package com.example.scpmisystem.api
 
-import com.example.scpmisystem.model.MarketsResponse
-import com.example.scpmisystem.model.PredictResponse
-import com.example.scpmisystem.model.ProductionResponse
-import com.example.scpmisystem.model.RecommendResponse
-import retrofit2.http.GET
-import retrofit2.http.Query
+import com.example.scpmisystem.model.*
+import retrofit2.http.*
 
 interface ScpmiApi {
+
+    @POST("register")
+    suspend fun register(@Body request: AuthRequest): AuthResponse
+
+    @POST("login")
+    suspend fun login(@Body request: AuthRequest): AuthResponse
 
     @GET("recommend-crop")
     suspend fun recommend(
@@ -17,7 +19,8 @@ interface ScpmiApi {
 
     @GET("mandi-prices")
     suspend fun markets(
-        @Query("crop") crop: String
+    @Query("crop") crop: String,
+    @Query("city") city: String? = null  
     ): MarketsResponse
 
     @GET("production-analysis")

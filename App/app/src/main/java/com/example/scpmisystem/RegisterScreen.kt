@@ -12,11 +12,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.scpmisystem.api.RetrofitInstance
+import com.example.scpmisystem.model.AuthRequest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterClick: (username: String, password: String) -> Unit,
+    onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
@@ -24,6 +27,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -118,12 +122,19 @@ fun RegisterScreen(
                             errorMessage = "Passwords do not match"
                         }
                         else -> {
-                            isLoading = true
-                            errorMessage = ""
-                            onRegisterClick(username, password)
-                            isLoading = false
-                            // Navigate back to login after successful registration
-                            onNavigateBack()
+                            scope.launch {
+                                isLoading = true
+                                errorMessage = ""
+                                try {
+                                    val response = RetrofitInstance.api.register(AuthRequest(username, password))
+                                    // Assuming success
+                                    onRegisterSuccess()
+                                } catch (e: Exception) {
+                                    errorMessage = "Registration failed: ${e.message}"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
                         }
                     }
                 },

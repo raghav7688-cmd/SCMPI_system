@@ -15,6 +15,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     var season by remember { mutableStateOf("") }
     var crop by remember { mutableStateOf("") }
     var area by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
@@ -32,6 +34,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
         Button(onClick = {
             scope.launch {
+                isLoading = true
+                result = ""
                 try {
                     val areaValue = area.toDoubleOrNull()
                     if (areaValue != null) {
@@ -41,19 +45,28 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                             crop,
                             areaValue
                         )
-                        println("Predicted yield: ${response.predicted_yield}")
+                        result = "Predicted yield: ${response.predicted_yield}, Confidence: ${response.confidence}"
                     } else {
-                        println("Please enter a valid area value")
+                        result = "Please enter a valid area value"
                     }
                 } catch (e: Exception) {
-                    println("Error: ${e.message}")
+                    result = "Error: ${e.message}"
+                } finally {
+                    isLoading = false
                 }
             }
+        }, enabled = !isLoading) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            } else {
+                Text("Predict Yield")
+            }
+        }
 
-        }) {
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Predict Yield")
-
+        if (result.isNotEmpty()) {
+            Text(text = result)
         }
 
     }

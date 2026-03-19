@@ -10,16 +10,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.scpmisystem.api.RetrofitInstance
+import com.example.scpmisystem.model.AuthRequest
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (username: String, password: String) -> Unit,
+    onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -74,10 +78,19 @@ fun LoginScreen(
         Button(
             onClick = {
                 if (username.isNotBlank() && password.isNotBlank()) {
-                    isLoading = true
-                    errorMessage = ""
-                    onLoginClick(username, password)
-                    isLoading = false
+                    scope.launch {
+                        isLoading = true
+                        errorMessage = ""
+                        try {
+                            val response = RetrofitInstance.api.login(AuthRequest(username, password))
+                            // Assuming success if no exception
+                            onLoginSuccess()
+                        } catch (e: Exception) {
+                            errorMessage = "Login failed: ${e.message}"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
                 } else {
                     errorMessage = "Please fill in all fields"
                 }

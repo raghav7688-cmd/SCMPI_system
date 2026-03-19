@@ -1,20 +1,33 @@
 package com.example.scpmisystem.model
 
+data class AuthRequest(
+    val username: String,
+    val password: String
+)
+
+data class AuthResponse(
+    val message: String
+)
+
 data class RecommendResponse(
     val recommended_crop: String,
     val expected_production: Double,
     val confidence: Double
 )
 
-data class Market(
-    val market: String,
-    val state: String,
-    val price: Double,
-    val arrival: Double
+data class MarketItem(
+    val city: String,
+    val commodity: String,
+    val group: String,
+    val msp: Double,
+    val latest_price: Double?,
+    val latest_arrival: Double?,
+    val prices: Map<String, Double>,
+    val arrivals: Map<String, Double>
 )
 
 data class MarketsResponse(
-    val markets: List<Market>
+    val markets: List<MarketItem>
 )
 
 data class ProductionResponse(
