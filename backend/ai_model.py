@@ -1,40 +1,29 @@
-﻿import joblib
+import joblib
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from pathlib import Path
 
 from .dataset_loader import load_crop_data
 
 MODEL_PATH = Path(__file__).parent / "model.joblib"
+REQUIRED_MODEL_FEATURES = {"State_Name", "District_Name", "Season", "Crop", "Crop_Year"}
 
 
 def build_pipeline(df: pd.DataFrame) -> Pipeline:
-    # adapt to available columns in dataset and normalize names for pipeline consistency
     df = df.copy()
-    if "Suggested_Crop" in df.columns and "Crop" not in df.columns:
-        df = df.rename(columns={"Suggested_Crop": "Crop"})
-
-    if "Max_Production" in df.columns and "Production" not in df.columns:
-        df = df.rename(columns={"Max_Production": "Production"})
-
-    if "Crop" not in df.columns:
-        raise ValueError("Missing crop column in dataset. Expected 'Crop' or 'Suggested_Crop'.")
-
     area_col = "Area" if "Area" in df.columns else None
 
-    features = ["State_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
+    features = ["State_Name", "District_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
     X = df[features]
     y = df["Production"]
-    if y is None:
-        raise ValueError("Missing target column in dataset. Expected 'Production' or 'Max_Production'.")
 
-    categorical = ["State_Name", "Season", "Crop"]
+    categorical = ["State_Name", "District_Name", "Season", "Crop"]
     numeric = ["Crop_Year"] + ([area_col] if area_col else [])
 
     preprocessor = ColumnTransformer(
@@ -54,15 +43,10 @@ def build_pipeline(df: pd.DataFrame) -> Pipeline:
 
 def train_and_save() -> dict:
     df = load_crop_data().copy()
-    if "Suggested_Crop" in df.columns and "Crop" not in df.columns:
-        df = df.rename(columns={"Suggested_Crop": "Crop"})
-    if "Max_Production" in df.columns and "Production" not in df.columns:
-        df = df.rename(columns={"Max_Production": "Production"})
-
     pipe = build_pipeline(df)
 
     area_col = "Area" if "Area" in df.columns else None
-    feature_cols = ["State_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
+    feature_cols = ["State_Name", "District_Name", "Season", "Crop", "Crop_Year"] + ([area_col] if area_col else [])
 
     X = df[feature_cols]
     y = df["Production"]
@@ -78,21 +62,43 @@ def train_and_save() -> dict:
 def load_model() -> Pipeline:
     if not MODEL_PATH.exists():
         train_and_save()
-    return joblib.load(MODEL_PATH)
+
+    model = joblib.load(MODEL_PATH)
+    model_features = set(getattr(model, "feature_names_in_", []))
+    if not REQUIRED_MODEL_FEATURES.issubset(model_features):
+        train_and_save()
+        model = joblib.load(MODEL_PATH)
+    return model
 
 
-def predict_yield(state: str, season: str, crop: str, area: float) -> dict:
+def predict_yield(state: str, district: str, season: str, crop: str, area: float) -> dict:
     model = load_model()
-    df = pd.DataFrame(
-        [{"State_Name": state, "Season": season, "Crop": crop, "Area": area, "Crop_Year": 2025}]
-    )
+    input_row = {
+        "State_Name": state,
+        "District_Name": district,
+        "Season": season,
+        "Crop": crop,
+        "Crop_Year": 2025,
+    }
+    if "Area" in model.feature_names_in_:
+        input_row["Area"] = area
+    df = pd.DataFrame([input_row])
     pred = float(model.predict(df)[0])
-    # crude confidence proxy using tree variance
+
     if hasattr(model.named_steps["model"], "estimators_"):
-        est_preds = np.vstack([tree.predict(model.named_steps["preprocess"].transform(df)) for tree in model.named_steps["model"].estimators_])
+        transformed = model.named_steps["preprocess"].transform(df)
+        est_preds = np.vstack([tree.predict(transformed) for tree in model.named_steps["model"].estimators_])
         std = est_preds.std()
         confidence = max(0.5, min(0.95, 1 / (1 + std)))
     else:
         confidence = 0.75
-    return {"predicted_yield": round(pred, 2), "confidence": round(confidence, 2)}
 
+    return {
+        "state": state.strip(),
+        "district": district.strip(),
+        "season": season.strip(),
+        "crop": crop.strip(),
+        "area": round(area, 2),
+        "predicted_yield": round(pred, 2),
+        "confidence": round(confidence, 2),
+    }

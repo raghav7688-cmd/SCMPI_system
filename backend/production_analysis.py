@@ -1,22 +1,33 @@
-﻿from .dataset_loader import load_state_supply_data
+from .dataset_loader import load_state_supply_data
 
 
 def production_vs_demand(state: str) -> dict:
     df = load_state_supply_data()
-    row = df[df["State"].str.lower() == state.lower()]
+    row = df[df["State_norm"] == state.strip().lower()]
     if row.empty:
-        return {"state": state, "production": None, "national_average": None, "status": "unknown"}
-    production = float(row.iloc[0]["Production_TotalFoodgrains"])
-    demand = float(row["Demand_Proxy_TotalFoodgrains"].mean())
-    status = "Balanced Production"
-    if production > 1.1 * demand:
-        status = "High Production"
-    elif production < 0.9 * demand:
-        status = "Low Production"
+        return {
+            "state": state.strip(),
+            "production": None,
+            "demand": None,
+            "demand_gap": None,
+            "status": "unknown",
+        }
+
+    production = float(row.iloc[0]["Production"])
+    demand = float(row.iloc[0]["Demand"])
+    demand_gap = round(demand - production, 2)
+
+    if demand_gap > 0:
+        status = "High"
+    elif abs(demand_gap) <= max(demand * 0.1, 1):
+        status = "Balanced"
+    else:
+        status = "Surplus"
+
     return {
-        "state": state,
+        "state": state.strip(),
         "production": round(production, 2),
-        "national_average": round(demand, 2),
+        "demand": round(demand, 2),
+        "demand_gap": demand_gap,
         "status": status,
     }
-

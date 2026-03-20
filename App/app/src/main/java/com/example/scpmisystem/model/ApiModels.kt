@@ -9,35 +9,41 @@ data class AuthResponse(
     val message: String
 )
 
+
+// ✅ UPDATED: recommend response (district-based + price)
 data class RecommendResponse(
+    val district: String,
     val recommended_crop: String,
-    val expected_production: Double,
-    val confidence: Double
+    val estimated_price: Double,
+    val reason: String
 )
 
-data class MarketItem(
-    val city: String,
-    val commodity: String,
-    val group: String,
-    val msp: Double,
-    val latest_price: Double?,
-    val latest_arrival: Double?,
-    val prices: Map<String, Double>,
-    val arrivals: Map<String, Double>
+
+
+// ✅ NEW mandi response (district → crop → price)
+
+data class MandiResponse(
+    val district: String,
+    val crop: String,
+    val price: Double,
+    val type: String
 )
 
-data class MarketsResponse(
-    val markets: List<MarketItem>
-)
 
+// ✅ UPDATED production (state-level only)
 data class ProductionResponse(
     val state: String,
-    val production: Double?,
-    val national_average: Double?,
+    val production: Double,
+    val demand: Double,
+    val gap: Double,
     val status: String
 )
 
+
+// ✅ UPDATED predict response
 data class PredictResponse(
-    val predicted_yield: Double,
-    val confidence: Double
+    val district: String,
+    val crop: String,
+    val area: Double,
+    val predicted_yield: String
 )

@@ -1,15 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import hashlib
 from pathlib import Path
 
-from .database import init_db, get_connection
-from .crop_recommendation import recommend_crop
-from .mandi_analysis import top_markets_for_crop
-from .production_analysis import production_vs_demand
 from .ai_model import predict_yield
+from .crop_recommendation import recommend_crop
+from .database import get_connection, init_db
+from .mandi_analysis import get_crop_price_estimate
+from .production_analysis import production_vs_demand
 
 app = FastAPI(title="Smart Crop Planning & Market Intelligence")
 
@@ -21,7 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for favicon
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
@@ -34,11 +33,14 @@ class AuthRequest(BaseModel):
 
 class RecommendQuery(BaseModel):
     state: str
+    district: str
     season: str
 
 
 class MandiQuery(BaseModel):
-    crop: str
+    state: str
+    district: str
+    season: str
 
 
 class ProductionQuery(BaseModel):
@@ -47,6 +49,7 @@ class ProductionQuery(BaseModel):
 
 class PredictQuery(BaseModel):
     state: str
+    district: str
     season: str
     crop: str
     area: float
@@ -78,7 +81,6 @@ def root():
 
 @app.get("/favicon.ico")
 def favicon():
-    """Return a minimal favicon to suppress 404 errors"""
     return {"status": "ok"}
 
 
@@ -92,7 +94,7 @@ def register(data: AuthRequest):
             (data.username, _hash_password(data.password)),
         )
         conn.commit()
-    except Exception as exc:  # simple uniqueness catch
+    except Exception as exc:
         raise HTTPException(status_code=400, detail="User already exists") from exc
     return {"message": "registered"}
 
@@ -106,17 +108,29 @@ def login(data: AuthRequest):
 
 
 @app.get("/recommend-crop")
-def recommend(state: str, season: str):
-    result = recommend_crop(state, season)
-    if result["recommended_crop"] is None:
+def recommend(state: str, district: str, season: str):
+    result = recommend_crop(state, district, season)
+    if result["crop"] is None:
         raise HTTPException(status_code=404, detail="No data for selection")
     return result
 
 
 @app.get("/mandi-prices")
-def mandi_prices(crop: str):
-    markets = top_markets_for_crop(crop)
-    return {"markets": markets}
+def mandi_prices(state: str, district: str, season: str):
+    recommendation = recommend_crop(state, district, season)
+    if recommendation["crop"] is None:
+        raise HTTPException(status_code=404, detail="No district-level crop found for market estimation")
+
+    price_estimate = get_crop_price_estimate(recommendation["crop"])
+    return {
+        "state": state.strip(),
+        "district": district.strip(),
+        "season": season.strip(),
+        "crop": recommendation["crop"],
+        "estimated_price": price_estimate["estimated_price"],
+        "latest_price_column": price_estimate["latest_price_column"],
+        "label": "crop-based estimate",
+    }
 
 
 @app.get("/production-analysis")
@@ -125,6 +139,5 @@ def prod_analysis(state: str):
 
 
 @app.get("/ai-predict-yield")
-def predict(state: str, season: str, crop: str, area: float):
-    return predict_yield(state, season, crop, area)
-
+def predict(state: str, district: str, season: str, crop: str, area: float):
+    return predict_yield(state, district, season, crop, area)

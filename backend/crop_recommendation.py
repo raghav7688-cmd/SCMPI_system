@@ -1,20 +1,31 @@
-import pandas as pd
 from .dataset_loader import load_crop_data
+from .mandi_analysis import get_crop_price_estimate
 
 
-def recommend_crop(state: str, season: str) -> dict:
+def recommend_crop(state: str, district: str, season: str) -> dict:
     df = load_crop_data()
-    filtered = df[(df["State_Name"].str.lower() == state.lower()) & (df["Season"].str.lower() == season.lower())]
+    filtered = df[
+        (df["State_Name_norm"] == state.strip().lower())
+        & (df["District_Name_norm"] == district.strip().lower())
+        & (df["Season_norm"] == season.strip().lower())
+    ]
     if filtered.empty:
-        return {"recommended_crop": None, "expected_production": 0, "confidence": 0.0}
+        return {
+            "district": district.strip(),
+            "crop": None,
+            "estimated_price": None,
+            "reason": "No district-level crop data found for the selected filters.",
+        }
 
-    grouped = filtered.groupby("Suggested_Crop")["Max_Production"].sum().sort_values(ascending=False)
-    top_crop = grouped.index[0]
-    production = float(grouped.iloc[0])
-    confidence = min(0.95, production / grouped.sum()) if grouped.sum() else 0.0
+    grouped = filtered.groupby("Crop", as_index=False)["Production"].max()
+    best_row = grouped.sort_values(["Production", "Crop"], ascending=[False, True]).iloc[0]
+    top_crop = str(best_row["Crop"]).strip()
+    production = float(best_row["Production"])
+    price_summary = get_crop_price_estimate(top_crop)
 
     return {
-        "recommended_crop": top_crop,
-        "expected_production": round(production, 2),
-        "confidence": round(confidence, 2),
+        "district": district.strip(),
+        "crop": top_crop,
+        "estimated_price": price_summary["estimated_price"],
+        "reason": f"Recommended because {top_crop} has the highest district-level production ({round(production, 2)}) in {district.strip()} for {season.strip()}.",
     }
