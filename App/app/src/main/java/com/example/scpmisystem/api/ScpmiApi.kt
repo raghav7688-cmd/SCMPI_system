@@ -1,7 +1,15 @@
 package com.example.scpmisystem.api
 
-import retrofit2.http.*
-import com.example.scpmisystem.model.*
+import com.example.scpmisystem.model.AuthRequest
+import com.example.scpmisystem.model.AuthResponse
+import com.example.scpmisystem.model.MandiResponse
+import com.example.scpmisystem.model.PredictResponse
+import com.example.scpmisystem.model.ProductionResponse
+import com.example.scpmisystem.model.RecommendResponse
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Query
 
 interface ScpmiApi {
 
@@ -11,7 +19,6 @@ interface ScpmiApi {
     @POST("login")
     suspend fun login(@Body request: AuthRequest): AuthResponse
 
-    // ✅ UPDATED: district added
     @GET("recommend-crop")
     suspend fun recommend(
         @Query("state") state: String,
@@ -19,7 +26,6 @@ interface ScpmiApi {
         @Query("season") season: String
     ): RecommendResponse
 
-    // ✅ FIXED: removed crop + city → now district flow
     @GET("mandi-prices")
     suspend fun markets(
         @Query("state") state: String,
@@ -27,13 +33,11 @@ interface ScpmiApi {
         @Query("season") season: String
     ): MandiResponse
 
-    // ✅ CORRECT (no change needed)
     @GET("production-analysis")
     suspend fun production(
         @Query("state") state: String
     ): ProductionResponse
 
-    // ✅ UPDATED: district added
     @GET("ai-predict-yield")
     suspend fun predict(
         @Query("state") state: String,

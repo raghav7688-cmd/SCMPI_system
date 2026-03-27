@@ -10,17 +10,17 @@ data class AuthResponse(
 )
 
 
-// ✅ UPDATED: recommend response (district-based + price)
+//  recommend response (district-based + price)
 data class RecommendResponse(
     val district: String,
-    val recommended_crop: String,
+    val crop: String,
     val estimated_price: Double,
     val reason: String
 )
 
 
 
-// ✅ NEW mandi response (district → crop → price)
+//mandi response (district → crop → price)
 
 data class MandiResponse(
     val district: String,
@@ -30,7 +30,7 @@ data class MandiResponse(
 )
 
 
-// ✅ UPDATED production (state-level only)
+// production (state-level only)
 data class ProductionResponse(
     val state: String,
     val production: Double,
@@ -40,7 +40,7 @@ data class ProductionResponse(
 )
 
 
-// ✅ UPDATED predict response
+// predict response
 data class PredictResponse(
     val district: String,
     val crop: String,

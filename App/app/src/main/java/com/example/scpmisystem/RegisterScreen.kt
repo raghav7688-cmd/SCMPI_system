@@ -4,12 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.*
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.scpmisystem.api.RetrofitInstance
@@ -22,118 +22,155 @@ fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+
+    // 🔹 States
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
     val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top App Bar with Back Button
-        TopAppBar(
-            title = { Text("Register") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Account") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
                 }
-            }
-        )
+            )
+        }
+    ) { padding ->
 
-        // Registration Form
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(padding)
+                .padding(20.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            // 🔥 Title
             Text(
-                text = "Create Account",
-                fontSize = 28.sp,
+                text = "🚀 Register",
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            // Username Field
-            TextField(
+            // 🔹 Username
+            OutlinedTextField(
                 value = username,
-                onValueChange = { username = it },
+                onValueChange = {
+                    username = it
+                    errorMessage = ""
+                },
                 label = { Text("Username") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                singleLine = true
             )
 
-            // Password Field
-            TextField(
+            // 🔹 Password
+            OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    errorMessage = ""
+                },
                 label = { Text("Password") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = "Toggle Password"
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            // Confirm Password Field
-            TextField(
+            // 🔹 Confirm Password
+            OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = {
+                    confirmPassword = it
+                    errorMessage = ""
+                },
                 label = { Text("Confirm Password") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = "Toggle Confirm Password"
+                        )
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
 
-            // Error Message
+            // 🔴 Error
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
             }
 
-            // Register Button
+            // 🔹 Register Button
             Button(
                 onClick = {
+
                     when {
                         username.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
-                            errorMessage = "Please fill in all fields"
+                            errorMessage = "Fill all fields"
                         }
+
                         password.length < 6 -> {
                             errorMessage = "Password must be at least 6 characters"
                         }
+
                         password != confirmPassword -> {
                             errorMessage = "Passwords do not match"
                         }
+
                         else -> {
                             scope.launch {
                                 isLoading = true
                                 errorMessage = ""
+
                                 try {
-                                    val response = RetrofitInstance.api.register(AuthRequest(username, password))
-                                    // Assuming success
+                                    RetrofitInstance.api.register(
+                                        AuthRequest(username, password)
+                                    )
+
                                     onRegisterSuccess()
+
                                 } catch (e: Exception) {
-                                    errorMessage = "Registration failed: ${e.message}"
-                                } finally {
-                                    isLoading = false
+                                    errorMessage = e.message ?: "Registration failed"
                                 }
+
+                                isLoading = false
                             }
                         }
                     }
@@ -141,12 +178,13 @@ fun RegisterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
-                    .padding(bottom = 16.dp),
+                    .padding(top = 8.dp),
                 enabled = !isLoading
             ) {
+
                 if (isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(22.dp),
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
@@ -154,15 +192,13 @@ fun RegisterScreen(
                 }
             }
 
-            // Login Link
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Already have an account? ")
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 🔹 Login Navigation
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Already have an account?")
                 TextButton(onClick = onNavigateBack) {
-                    Text("Login Here")
+                    Text(" Login")
                 }
             }
         }

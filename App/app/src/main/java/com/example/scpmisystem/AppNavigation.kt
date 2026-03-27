@@ -1,35 +1,56 @@
 package com.example.scpmisystem
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
+import androidx.navigation.compose.*
+
+/**
+ * 🔹 All routes in one place (avoid hardcoded strings)
+ */
+sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object Register : Screen("register")
+    object Home : Screen("home")
+    object Recommend : Screen("recommend")
+    object Mandi : Screen("mandi")
+    object Production : Screen("production")
+    object Predict : Screen("predict")
+}
 
 @Composable
-fun AppNavigation(navController: NavHostController) {
+fun AppNavigation(
+    navController: NavHostController = rememberNavController()
+) {
+
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Screen.Login.route
     ) {
-        composable("login") {
+
+        /**
+         * 🔹 LOGIN SCREEN
+         */
+        composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
-                    navController.navigate("register")
+                    navController.navigate(Screen.Register.route)
                 }
             )
         }
 
-        composable("register") {
+        /**
+         * 🔹 REGISTER SCREEN
+         */
+        composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = {
-                    navController.navigate("login") {
-                        popUpTo("register") { inclusive = true }
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
                 onNavigateBack = {
@@ -38,14 +59,36 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
 
-        composable("home") {
+        /**
+         * 🔹 HOME SCREEN
+         */
+        composable(Screen.Home.route) {
             HomeScreen(
                 onLogout = {
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 }
             )
+        }
+
+        /**
+         * 🔹 FEATURE SCREENS
+         */
+        composable(Screen.Recommend.route) {
+            RecommendCropTab()
+        }
+
+        composable(Screen.Mandi.route) {
+            MarketPricesTab()
+        }
+
+        composable(Screen.Production.route) {
+            ProductionAnalysisTab()
+        }
+
+        composable(Screen.Predict.route) {
+            PredictYieldTab()
         }
     }
 }
