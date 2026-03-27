@@ -1,15 +1,41 @@
-# Python
+# 🔴 Python cache
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 
-# Virtual environments
+# 🔴 Virtual environments (VERY IMPORTANT)
+venv/
+env/
+ENV/
+.venv/
 
-# IDE/editor
+# 🔴 Environment variables
+.env
+
+# 🔴 IDE / Editor
 .vscode/
 .idea/
 
-# OS files
+# 🔴 OS files
 .DS_Store
 Thumbs.db
+
+# 🔴 Logs
+*.log
+
+# 🔴 Database
+*.db
+*.sqlite3
+
+# 🔴 Model files (optional - agar large ho)
+# *.joblib
+# *.pkl
+
+# 🔴 Build files
+build/
+dist/
+*.egg-info/
+
+# 🔴 Jupyter Notebook
+.ipynb_checkpoints/
