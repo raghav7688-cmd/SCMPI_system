@@ -39,7 +39,13 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable("home") {
-            HomeScreen(modifier = Modifier)
+            HomeScreen(
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
