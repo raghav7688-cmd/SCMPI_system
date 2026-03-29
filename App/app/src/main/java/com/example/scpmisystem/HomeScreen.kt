@@ -173,7 +173,7 @@ fun MarketPricesTab() {
                 error = ""
                 try {
                     val res = RetrofitInstance.api.markets(state, district, season)
-                    result = "🌾 ${res.crop}\n💰 ₹${res.price}\n📍 ${res.district}"
+                    result = "🌾 ${res.crop}\n💰 ₹${res.estimated_price ?: "N/A"}\n📍 ${res.district}\n🗓️ ${res.latest_price_column ?: "No recent price column"}"
                 } catch (e: Exception) {
                     error = e.message ?: ""
                 }
@@ -205,8 +205,11 @@ fun ProductionAnalysisTab() {
         Button(onClick = {
             scope.launch {
                 loading = true
-                val res = RetrofitInstance.api.production(state)
-                result = "📊 ${res.production}\n📉 Gap: ${res.gap}\n📈 ${res.status}"
+                runCatching {
+                    RetrofitInstance.api.production(state)
+                }.onSuccess { res ->
+                    result = "📊 Production: ${res.production ?: "N/A"}\n🛒 Demand: ${res.demand ?: "N/A"}\n📉 Gap: ${res.demand_gap ?: "N/A"}\n📈 ${res.status}"
+                }
                 loading = false
             }
         }, modifier = Modifier.fillMaxWidth()) {
@@ -248,8 +251,14 @@ fun PredictYieldTab() {
             }
 
             scope.launch {
-                val res = RetrofitInstance.api.predict(state, district, season, crop, areaVal)
-                result = "🌾 ${res.crop}\n📊 Yield: ${res.predicted_yield}"
+                runCatching {
+                    RetrofitInstance.api.predict(state, district, season, crop, areaVal)
+                }.onSuccess { res ->
+                    result = "🌾 ${res.crop}\n📊 Yield: ${res.predicted_yield}\n🎯 Confidence: ${res.confidence}"
+                    error = ""
+                }.onFailure { e ->
+                    error = e.message ?: "Error"
+                }
             }
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Predict")

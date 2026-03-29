@@ -58,7 +58,7 @@ fun RegisterScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // 🔥 Title
+            // Title
             Text(
                 text = "🚀 Register",
                 style = MaterialTheme.typography.headlineLarge,
