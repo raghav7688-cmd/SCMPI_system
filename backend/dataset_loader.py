@@ -39,6 +39,8 @@ def load_mandi_data() -> pd.DataFrame:
     df = _coerce_numeric(df, numeric_cols)
     if "Commodity" in df.columns:
         df["Commodity_norm"] = df["Commodity"].map(normalize_text)
+    if "District" in df.columns:
+        df["District_norm"] = df["District"].map(normalize_text)
     df = df.dropna(subset=["Commodity"])
     return df
 

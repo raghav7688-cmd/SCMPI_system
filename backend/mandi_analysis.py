@@ -16,9 +16,18 @@ def get_sorted_price_columns(df: pd.DataFrame) -> list[str]:
     return sorted([col for col in df.columns if col.startswith("Price_")], key=_parse_price_date)
 
 
-def get_crop_price_estimate(crop: str) -> dict:
+def get_crop_price_estimate(crop: str, district: str | None = None) -> dict:
     df = load_mandi_data()
     filtered = df[df["Commodity_norm"] == crop.strip().lower()]
+    district_name = district.strip() if district else None
+    used_district_filter = False
+
+    if district_name and "District_norm" in filtered.columns:
+        district_filtered = filtered[filtered["District_norm"] == district_name.lower()]
+        if not district_filtered.empty:
+            filtered = district_filtered
+            used_district_filter = True
+
     if filtered.empty:
         return {
             "crop": crop.strip(),
@@ -40,5 +49,5 @@ def get_crop_price_estimate(crop: str) -> dict:
         "crop": str(filtered.iloc[0]["Commodity"]).strip(),
         "estimated_price": estimated_price,
         "latest_price_column": latest_price_col,
-        "label": "crop-based estimate",
+        "label": "district-based estimate" if used_district_filter else "crop-based estimate",
     }

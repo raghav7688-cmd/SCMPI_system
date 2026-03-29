@@ -21,7 +21,7 @@ def recommend_crop(state: str, district: str, season: str) -> dict:
     best_row = grouped.sort_values(["Production", "Crop"], ascending=[False, True]).iloc[0]
     top_crop = str(best_row["Crop"]).strip()
     production = float(best_row["Production"])
-    price_summary = get_crop_price_estimate(top_crop)
+    price_summary = get_crop_price_estimate(top_crop, district)
 
     return {
         "district": district.strip(),

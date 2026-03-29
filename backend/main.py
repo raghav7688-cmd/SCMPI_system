@@ -121,7 +121,7 @@ def mandi_prices(state: str, district: str, season: str):
     if recommendation["crop"] is None:
         raise HTTPException(status_code=404, detail="No district-level crop found for market estimation")
 
-    price_estimate = get_crop_price_estimate(recommendation["crop"])
+    price_estimate = get_crop_price_estimate(recommendation["crop"], district)
     return {
         "state": state.strip(),
         "district": district.strip(),
@@ -129,7 +129,7 @@ def mandi_prices(state: str, district: str, season: str):
         "crop": recommendation["crop"],
         "estimated_price": price_estimate["estimated_price"],
         "latest_price_column": price_estimate["latest_price_column"],
-        "label": "crop-based estimate",
+        "label": price_estimate["label"],
     }
 
 
